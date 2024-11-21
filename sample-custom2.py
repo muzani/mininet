@@ -37,7 +37,9 @@ class MyTopo( Topo ):
         self.addLink( s2, s3 )
         
 if __name__ == '__main__':
-# Set Mininet log level
-setLogLevel('info')
+    # Set Mininet log level
+    setLogLevel('info')
 
 topos = { 'mytopo': ( lambda: MyTopo() ) }
+
+#sudo mn --custom sample-custom2.py --topo mytopo --switch ovsk --controller=remote
