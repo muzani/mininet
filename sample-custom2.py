@@ -9,6 +9,8 @@ topology enables one to pass in '--topo=mytopo' from the command line.
 """
 
 from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.node import RemoteController
 from mininet.log import setLogLevel
 
 class MyTopo( Topo ):
