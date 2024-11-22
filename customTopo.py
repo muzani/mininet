@@ -1,4 +1,3 @@
-
 from mininet.topo import Topo
 
 class MyTopo(topo):
