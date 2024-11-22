@@ -37,8 +37,16 @@ class MyTopo( Topo ):
         self.addLink( s2, s3 )
         
 if __name__ == '__main__':
-    # Set Mininet log level
     setLogLevel('info')
+    
+    # Gunakan topologi kustom
+    topo = MyTopo()
+    net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
+    
+    net.start()
+    print("Jaringan berjalan. Gunakan 'pingall' untuk menguji konektivitas.")
+    net.pingAll()
+    net.stop()
 
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
