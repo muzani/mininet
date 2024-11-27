@@ -20,9 +20,12 @@ class MyTopo( Topo ):
         "Create custom topo."
 
         # Add hosts and switches
-        h1 = self.addHost( 'h1' )
-        h2 = self.addHost( 'h2' )
-        h3 = self.addHost( 'h3' )
+        # h1 = self.addHost( 'h1' )
+        h1 = self.addHost( 'h1' ,'ip=192.168.1.1')
+        # h2 = self.addHost( 'h2' )
+        h1 = self.addHost( 'h1' ,'ip=192.168.1.2')
+        # h3 = self.addHost( 'h3' )
+        h1 = self.addHost( 'h1' ,'ip=192.168.1.1')
         
         #add Switchs
         s1 = self.addSwitch( 's1' )
@@ -30,9 +33,9 @@ class MyTopo( Topo ):
         s3 = self.addSwitch( 's3' )
 
         # Add links between host and switchs
-        self.addLink( s1, h1 )
-        self.addLink( s2, h2 )
-        self.addLink( s3, h3 )
+        self.addLink( h1, s1 )
+        self.addLink( h2, s2 )
+        self.addLink( h3, s3 )
         
         # Add link between switchs
         self.addLink( s1, s2 )
@@ -53,3 +56,6 @@ class MyTopo( Topo ):
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
 #sudo mn --custom sample-custom2.py --topo mytopo --switch ovsk --controller=remote
+#secara default sudah ada controller
+# xterm h1 h2 = untuk virtual terminal setiap host
+# 
