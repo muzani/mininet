@@ -52,4 +52,4 @@ class MyTopo( Topo ):
 
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
-#sudo mn --custom sample-custom2.py --topo MyTopo --switch ovsk --controller=remote
+#sudo mn --custom sample-custom2.py --topo mytopo --switch ovsk --controller=remote
