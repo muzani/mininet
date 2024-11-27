@@ -38,18 +38,18 @@ class MyTopo( Topo ):
         self.addLink( s1, s2 )
         self.addLink( s2, s3 )
         
-if __name__ == '__main__':
-    setLogLevel('info')
+# if __name__ == '__main__':
+    # setLogLevel('info')
     
-    # Gunakan topologi kustom
-    topo = MyTopo()
-    net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
+    # # Gunakan topologi kustom
+    # topo = MyTopo()
+    # net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     
-    net.start()
-    print("Jaringan berjalan. Gunakan 'pingall' untuk menguji konektivitas.")
-    net.pingAll()
-    net.stop()
+    # net.start()
+    # print("Jaringan berjalan. Gunakan 'pingall' untuk menguji konektivitas.")
+    # net.pingAll()
+    # net.stop()
 
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
-#sudo mn --custom sample-custom2.py --topo mytopo --switch ovsk --controller=remote
+#sudo mn --custom sample-custom2.py --topo MyTopo --switch ovsk --controller=remote
