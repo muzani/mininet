@@ -20,12 +20,12 @@ class MyTopo( Topo ):
         "Create custom topo."
 
         # Add hosts and switches
-        # h1 = self.addHost( 'h1' )
-        h1 = self.addHost( 'h1' ,ip='192.168.1.1')
-        # h2 = self.addHost( 'h2' )
-        h2 = self.addHost( 'h2' ,ip='192.168.1.2')
-        # h3 = self.addHost( 'h3' )
-        h3 = self.addHost( 'h3' ,ip='192.168.1.3')
+        h1 = self.addHost( 'h1' )
+        # h1 = self.addHost( 'h1' ,ip='192.168.1.1')
+        h2 = self.addHost( 'h2' )
+        # h2 = self.addHost( 'h2' ,ip='192.168.1.2')
+        h3 = self.addHost( 'h3' )
+        # h3 = self.addHost( 'h3' ,ip='192.168.1.3')
         
         #add Switchs
         s1 = self.addSwitch( 's1' )
