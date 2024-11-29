@@ -21,13 +21,13 @@ class MyTopo( Topo ):
         "Create custom topo."
 
         # Add hosts
-        h1 = self.addHost( 'h1' )
-        h2 = self.addHost( 'h2' )
-        h3 = self.addHost( 'h3' )
+        # h1 = self.addHost( 'h1' )
+        # h2 = self.addHost( 'h2' )
+        # h3 = self.addHost( 'h3' )
         
-        # h1 = self.addHost( 'h1' ,ip='192.168.1.1')
-        # h2 = self.addHost( 'h2' ,ip='192.168.1.2')
-        # h3 = self.addHost( 'h3' ,ip='192.168.1.3')
+        h1 = self.addHost( 'h1' ,ip='192.168.1.1')
+        h2 = self.addHost( 'h2' ,ip='192.168.1.2')
+        h3 = self.addHost( 'h3' ,ip='192.168.1.3')
         
         #add Switchs
         s1 = self.addSwitch( 's1', cls=OVSBridge)
@@ -58,6 +58,7 @@ class MyTopo( Topo ):
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
 #sudo mn --custom sample-custom2.py --topo mytopo --switch ovsk --controller=remote
+#sudo mn --custom single.py --topo mytopo
 #secara default sudah ada controller
 # xterm h1 h2 = untuk virtual terminal setiap host
 # 
