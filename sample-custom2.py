@@ -12,6 +12,7 @@ from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.log import setLogLevel
+from mininet.node import OVSBridge
 
 class MyTopo( Topo ):
     "Simple topology example."
@@ -19,18 +20,19 @@ class MyTopo( Topo ):
     def build( self ):
         "Create custom topo."
 
-        # Add hosts and switches
+        # Add hosts
         h1 = self.addHost( 'h1' )
-        # h1 = self.addHost( 'h1' ,ip='192.168.1.1')
         h2 = self.addHost( 'h2' )
-        # h2 = self.addHost( 'h2' ,ip='192.168.1.2')
         h3 = self.addHost( 'h3' )
+        
+        # h1 = self.addHost( 'h1' ,ip='192.168.1.1')
+        # h2 = self.addHost( 'h2' ,ip='192.168.1.2')
         # h3 = self.addHost( 'h3' ,ip='192.168.1.3')
         
         #add Switchs
-        s1 = self.addSwitch( 's1' )
-        s2 = self.addSwitch( 's2' )
-        s3 = self.addSwitch( 's3' )
+        s1 = self.addSwitch( 's1', cls=OVSBridge)
+        s2 = self.addSwitch( 's2', cls=OVSBridge)
+        s3 = self.addSwitch( 's3', cls=OVSBridge )
 
         # Add links between host and switchs
         self.addLink( h1, s1 )
