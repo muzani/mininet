@@ -1,0 +1,28 @@
+from ryu.base import app_manager
+from ryu.controller import ofp_event
+from ryu.controller.handler import MAIN_DISPATCHER, set_ev_cls
+from ryu.ofproto import ofproto_v1_3
+
+class SimpleSwitch(app_manager.RyuApp):
+    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+
+    def __init__(self, *args, **kwargs):
+        super(SimpleSwitch, self).__init__(*args, **kwargs)
+
+    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    def packet_in_handler(self, ev):
+        msg = ev.msg
+        dp = msg.datapath
+        ofproto = dp.ofproto
+        parser = dp.ofproto_parser
+
+        # Proses paket masuk
+        in_port = msg.match['in_port']
+        self.logger.info("Packet received at switch %s from port %s",
+                         dp.id, in_port)
+
+        actions = [parser.OFPActionOutput(ofproto.OFPP_FLOOD)]
+        out = parser.OFPPacketOut(
+            datapath=dp, buffer_id=msg.buffer_id, in_port=in_port, actions=actions
+        )
+        dp.send_msg(out)
