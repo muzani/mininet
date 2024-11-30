@@ -26,3 +26,12 @@ class SimpleSwitch(app_manager.RyuApp):
             datapath=dp, buffer_id=msg.buffer_id, in_port=in_port, actions=actions
         )
         dp.send_msg(out)
+
+
+#test
+#run
+# ryu-manager simple_switch.py
+
+#attack
+# hping3 -S -p 80 --flood <IP_TARGET>
+
