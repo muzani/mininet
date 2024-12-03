@@ -30,9 +30,9 @@ class MyTopo( Topo ):
         h3 = self.addHost( 'h3' ,ip='192.168.1.3')
         
         #add Switchs
-        s1 = self.addSwitch( 's1', cls=OVSBridge)
-        s2 = self.addSwitch( 's2', cls=OVSBridge)
-        s3 = self.addSwitch( 's3', cls=OVSBridge )
+        s1 = self.addSwitch( 's1') #, cls=OVSBridge
+        s2 = self.addSwitch( 's2')
+        s3 = self.addSwitch( 's3')
 
         # Add links between host and switchs
         self.addLink( h1, s1 )
