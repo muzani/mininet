@@ -5,6 +5,7 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet, ipv4
 
+import logging
 import smtplib
 from email.mime.text import MIMEText
 
@@ -25,10 +26,14 @@ class DDoSDetection(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         pkt = packet.Packet(msg.data)
-
+        
+        self.logger.info("ini paket datanya "+ pkt)
+        
         # Parsing Ethernet dan IPv4
         eth = pkt.get_protocol(ethernet.ethernet)
         ip = pkt.get_protocol(ipv4.ipv4)
+        
+        self.logger.info("ini jenis ip"+ ip)
 
         if not ip:  # Abaikan jika bukan paket IPv4
             return
