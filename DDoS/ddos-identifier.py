@@ -29,6 +29,7 @@ class DDoSDetection(app_manager.RyuApp):
         
         self.logger.info("ini paket datanya "+ pkt)
         
+        
         # Parsing Ethernet dan IPv4
         eth = pkt.get_protocol(ethernet.ethernet)
         ip = pkt.get_protocol(ipv4.ipv4)
