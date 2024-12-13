@@ -15,7 +15,7 @@ class DDoSDetection(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
         self.packet_count = {}
-        self.threshold = 1000  # Threshold paket per detik per IP
+        #self.threshold = 1000  # Threshold paket per detik per IP
         self.email_sent = False
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -27,14 +27,14 @@ class DDoSDetection(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         pkt = packet.Packet(msg.data)
         
-        self.logger.info("ini paket datanya "+ pkt)
+        self.logger.info("ini paket datanya %s", pkt)
         
         
         # Parsing Ethernet dan IPv4
         eth = pkt.get_protocol(ethernet.ethernet)
         ip = pkt.get_protocol(ipv4.ipv4)
         
-        self.logger.info("ini jenis ip"+ ip)
+        self.logger.info("ini jenis %s", ip)
 
         if not ip:  # Abaikan jika bukan paket IPv4
             return

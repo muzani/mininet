@@ -35,3 +35,6 @@ class SimpleSwitch(app_manager.RyuApp):
 #attack
 # hping3 -S -p 80 --flood <IP_TARGET>
 
+#h1 hping3 -c 100 [IP_of_h2]
+#https://www.researchgate.net/figure/generating-UDP-normal-packets_fig7_340663367
+
