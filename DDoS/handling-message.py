@@ -4,6 +4,7 @@ from ryu.controller.handler import MAIN_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet, ipv4
+import switch
 
 class SimpleSwitch(switch.SimpleSwitch13):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
