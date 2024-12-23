@@ -18,7 +18,7 @@ class SimpleSwitch(app_manager.RyuApp):
         dp = msg.datapath
         ofproto = dp.ofproto
         parser = dp.ofproto_parser
-        self.logger.info("paket handler %s", ofproto)
+        self.logger.info("paket handler")
 
         # Proses paket masuk
         in_port = msg.match['in_port']
