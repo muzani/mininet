@@ -8,13 +8,15 @@ class SimpleSwitch(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch, self).__init__(*args, **kwargs)
+        self.logger.info("start init")
 
-    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         msg = ev.msg
         dp = msg.datapath
         ofproto = dp.ofproto
         parser = dp.ofproto_parser
+        self.logger.info("paket handler %s", ofproto)
 
         # Proses paket masuk
         in_port = msg.match['in_port']

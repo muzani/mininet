@@ -15,10 +15,26 @@ class DDoSDetection(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
         self.packet_count = {}
-        #self.threshold = 1000  # Threshold paket per detik per IP
+        #self.threshold = 10  # Threshold paket per detik per IP
         self.email_sent = False
+        self.logger.info("status email %s", self.email_sent)
+        self.monitor_thread = hub.spawn(self._monitor)
+        
+    def _monitor(self):
+        while True:
+            for dp in self.datapaths.values():
+                self._request_stats(dp)
+            hub.sleep(10)
+    
+    def _request_stats(self, datapath):
+        self.logger.debug('send stats request: %016x', datapath.id)
+        parser = datapath.ofproto_parser
 
-    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+        req = parser.OFPFlowStatsRequest(datapath)
+        datapath.send_msg(req)
+
+    #@set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         # Ambil data paket
         msg = ev.msg
