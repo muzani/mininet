@@ -33,16 +33,16 @@ class MyTopo( Topo ):
         h4 = self.addHost('h4', ip='10.0.0.4/24')
 
         # Hubungkan host ke switch
-        self.addLink(h1, s1, bw=10, delay='5ms')
-        self.addLink(h2, s1, bw=10, delay='5ms')
-        self.addLink(h3, s4, bw=10, delay='5ms')
-        self.addLink(h4, s4, bw=10, delay='5ms')
+        self.addLink(h1, s1)
+        self.addLink(h2, s1)
+        self.addLink(h3, s4)
+        self.addLink(h4, s4)
 
         # Hubungkan switch ke switch
-        self.addLink(s1, s2, bw=15, delay='2ms')
-        self.addLink(s2, s3, bw=15, delay='2ms')
-        self.addLink(s3, s4, bw=15, delay='2ms')
-        self.addLink(s1, s4, bw=20, delay='1ms') 
+        self.addLink(s1, s2)
+        self.addLink(s2, s3)
+        self.addLink(s3, s4)
+        self.addLink(s1, s4) 
         
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
