@@ -22,31 +22,7 @@ class DDoSDetectionEmail(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         self.logger.info("Switch connected: %s", ev.msg.datapath.id)
-        #send email
-        sender_email = "socialme.black@gmail.com"
-        sender_password = "akcrzfnwnncrpygh"
-        recipient_email = "zanimumu@gmail.com"
-
-        subject = "Peringatan: Serangan DDoS Terdeteksi"
-        body = f"Serangan DDoS telah terdeteksi dari sumber IP: {ev.msg.datapath.id}."
-
-        msg = MIMEText(body, 'plain')
-        msg['Subject'] = subject
-        msg['From'] = sender_email
-        msg['To'] = recipient_email
-
-        try:
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                server.starttls()
-                server.login(sender_email, sender_password)
-                server.send_message(msg)
-                self.logger.info("Email notifikasi berhasil dikirim.")
-        except Exception as e:
-            self.logger.error(f"Gagal mengirim email: {e}")
-            
-        self.install_default_flow(ev.msg.datapath)
-        
-        
+        self.install_default_flow(ev.msg.datapath)        
 
     def install_default_flow(self, datapath):
         ofproto = datapath.ofproto
@@ -101,7 +77,7 @@ class DDoSDetectionEmail(app_manager.RyuApp):
     def send_email_alert(self, src_ip, dpid, count):
         """Kirim notifikasi email tentang potensi serangan DDoS."""
         sender_email = "socialme.black@gmail.com"
-        sender_password = "vmxexulzueqqcldp"
+        sender_password = "akcrzfnwnncrpygh"
         recipient_email = "zanimumu@gmail.com"
 
         subject = "DDoS Alert: Potensi Serangan Terdeteksi"
@@ -112,21 +88,33 @@ class DDoSDetectionEmail(app_manager.RyuApp):
             f"Jumlah Packet-In: {count} per detik\n\n"
             f"Harap segera periksa sistem jaringan Anda."
         )
-
-        # Konfigurasi email
-        message = MIMEMultipart()
-        message["From"] = sender_email
-        message["To"] = recipient_email
-        message["Subject"] = subject
-        message.attach(MIMEText(body, "plain"))
-
+        
+        msg = MIMEText(body, 'plain')
+        msg['Subject'] = subject
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
         try:
-            # Koneksi ke server SMTP
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, recipient_email, message.as_string())
-            self.logger.info("Notifikasi email terkirim ke %s", recipient_email)
-            server.quit()
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.send_message(msg)
+                self.logger.info("Email notifikasi berhasil dikirim.")
         except Exception as e:
-            self.logger.error("Gagal mengirim email: %s", str(e))
+            self.logger.error(f"Gagal mengirim email: {e}")
+            
+        # Konfigurasi email
+        # message = MIMEMultipart()
+        # message["From"] = sender_email
+        # message["To"] = recipient_email
+        # message["Subject"] = subject
+        # message.attach(MIMEText(body, "plain"))
+        # try:
+            # # Koneksi ke server SMTP
+            # server = smtplib.SMTP("smtp.gmail.com", 587)
+            # server.starttls()
+            # server.login(sender_email, sender_password)
+            # server.sendmail(sender_email, recipient_email, message.as_string())
+            # self.logger.info("Notifikasi email terkirim ke %s", recipient_email)
+            # server.quit()
+        # except Exception as e:
+            # self.logger.error("Gagal mengirim email: %s", str(e))
