@@ -3,14 +3,15 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from collections import defaultdict
+from ryu.lib.packet import packet, ethernet, ipv4, tcp, udp
 import time
 
-class DDoSDetection(app_manager.RyuApp):
+class DDoSDetectionSensitive(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(DDoSDetection, self).__init__(*args, **kwargs)
-        self.packet_in_counter = defaultdict(int)
+        super(DDoSDetectionSensitive, self).__init__(*args, **kwargs)
+        self.packet_in_counter = defaultdict(lambda: defaultdict(int))  # Counter untuk setiap IP sumber
         self.start_time = time.time()
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -35,12 +36,28 @@ class DDoSDetection(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         current_time = time.time()
-        dpid = ev.msg.datapath.id
-        self.packet_in_counter[dpid] += 1
+        msg = ev.msg
+        datapath = msg.datapath
+        dpid = datapath.id
+        pkt = packet.Packet(msg.data)
 
+        eth = pkt.get_protocol(ethernet.ethernet)
+        ip = pkt.get_protocol(ipv4.ipv4)
+        tcp_pkt = pkt.get_protocol(tcp.tcp)
+        udp_pkt = pkt.get_protocol(udp.udp)
+
+        if ip:  # Hanya hitung jika paket memiliki header IPv4
+            src_ip = ip.src
+            self.packet_in_counter[dpid][src_ip] += 1
+
+        # Log setiap detik
         if current_time - self.start_time >= 1:
-            for dpid, count in self.packet_in_counter.items():
-                if count > 100:  # Threshold
-                    self.logger.warning("Potensi serangan DDoS terdeteksi di switch %s: %d Packet-In per detik", dpid, count)
-            self.packet_in_counter = defaultdict(int)
+            for dpid, src_counts in self.packet_in_counter.items():
+                for src_ip, count in src_counts.items():
+                    if count > 50:  # Threshold untuk setiap IP sumber
+                        self.logger.warning(
+                            "Potensi serangan DDoS dari IP %s di switch %s: %d Packet-In per detik",
+                            src_ip, dpid, count)
+            # Reset counter dan waktu
+            self.packet_in_counter = defaultdict(lambda: defaultdict(int))
             self.start_time = current_time

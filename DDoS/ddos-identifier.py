@@ -97,4 +97,4 @@ class DDoSDetection(app_manager.RyuApp):
 
 #attack
 # hping3 -S -p 80 --flood <IP_TARGET>
-# hping3 -S -p 6633 -i u1000 10.0.0.2
+# hping3 -S -p 6653 -i u1000 10.0.0.2
