@@ -50,6 +50,28 @@ class DDoSDetectionEmail(app_manager.RyuApp):
         ip = pkt.get_protocol(ipv4.ipv4)
         tcp_pkt = pkt.get_protocol(tcp.tcp)
         udp_pkt = pkt.get_protocol(udp.udp)
+        
+        #send email
+        sender_email = "socialme.black@gmail.com"
+        sender_password = "vmxexulzueqqcldp"
+        recipient_email = "zanimumu@gmail.com"
+
+        subject = "Peringatan: Serangan DDoS Terdeteksi"
+        body = f"Serangan DDoS telah terdeteksi dari sumber IP: {attacker_ip}."
+
+        msg = MIMEText(body, 'plain')
+        msg['Subject'] = subject
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+
+        try:
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.send_message(msg)
+                self.logger.info("Email notifikasi berhasil dikirim.")
+        except Exception as e:
+            self.logger.error(f"Gagal mengirim email: {e}")
 
         if ip:  # Hitung hanya jika paket memiliki header IPv4
             src_ip = ip.src
