@@ -27,10 +27,10 @@ class MyTopo( Topo ):
         s4 = self.addSwitch('s4')
 
         # Tambahkan host
-        h1 = self.addHost('h1', ip='10.0.0.1/24')
-        h2 = self.addHost('h2', ip='10.0.0.2/24')
-        h3 = self.addHost('h3', ip='10.0.0.3/24')
-        h4 = self.addHost('h4', ip='10.0.0.4/24')
+        h1 = self.addHost('h1', ip='192.168.1.1')
+        h2 = self.addHost('h2', ip='192.168.1.2')
+        h3 = self.addHost('h3', ip='192.168.1.3')
+        h4 = self.addHost('h4', ip='192.168.1.4')
 
         # Hubungkan host ke switch
         self.addLink(h1, s1)
