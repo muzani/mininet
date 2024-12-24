@@ -53,7 +53,7 @@ class DDoSDetectionEmail(app_manager.RyuApp):
         
         #send email
         sender_email = "socialme.black@gmail.com"
-        sender_password = "vmxexulzueqqcldp"
+        sender_password = "akcrzfnwnncrpygh"
         recipient_email = "zanimumu@gmail.com"
 
         subject = "Peringatan: Serangan DDoS Terdeteksi"
