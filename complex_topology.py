@@ -19,7 +19,7 @@ class MyTopo( Topo ):
 
     def build( self ):
         """Membuat topologi jaringan yang kompleks dengan koneksi yang valid."""
-        net = Mininet(controller=RemoteController, switch=OVSSwitch, link=TCLink)
+        net = Mininet(controller=RemoteController, link=TCLink)
 
         # Tambahkan controller
         controller = net.addController('c0', controller=RemoteController, ip='127.0.0.1', port=6633)
