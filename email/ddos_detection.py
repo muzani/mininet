@@ -57,6 +57,9 @@ class EmailNotificationRyu(app_manager.RyuApp):
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         dst = eth.dst
         src = eth.src
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        in_port = msg.match['in_port']
 
         pkt_arp = pkt.get_protocol(arp.arp)
         pkt_icmp = pkt.get_protocol(icmp.icmp)
