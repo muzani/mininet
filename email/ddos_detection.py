@@ -4,6 +4,9 @@ from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cl
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ipv4, icmp
 from collections import defaultdict
+from ryu.lib.packet import tcp
+from ryu.lib.packet import udp
+from ryu.lib.packet import arp
 
 # Fungsi pengiriman email
 import smtplib
