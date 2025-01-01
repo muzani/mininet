@@ -50,7 +50,9 @@ class EmailNotificationRyu(app_manager.RyuApp):
         
         #eth = pkt.get_protocol(ethernet.ethernet)
         #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
-            
+        
+        datapath = msg.datapath
+        dpid = datapath.id    
         pkt_arp = pkt.get_protocol(arp.arp)
         pkt_icmp = pkt.get_protocol(icmp.icmp)
         pkt_ip = pkt.get_protocol(ipv4.ipv4)
