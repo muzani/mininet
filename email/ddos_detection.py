@@ -4,7 +4,7 @@ from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cl
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ipv4, icmp
 from collections import defaultdict
-from ryu.ofproto.ofproto_v1_3 import OFPMatch
+from ryu.ofproto import ofproto_v1_3
 from ryu.ofproto.ofproto_v1_3 import OFPActionOutput
 
 # Fungsi pengiriman email
