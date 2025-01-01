@@ -64,7 +64,6 @@ class EmailNotificationRyu(app_manager.RyuApp):
                 self.packet_counts[src_ip] += 1
                 self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
                 
-
                 # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
                     # self.send_email_alert(src_ip)
                     # self.email_sent.add(src_ip)
@@ -72,7 +71,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def install_default_flow(self, datapath):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        match = parser.OFPMatch()
+        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1)  # ICMP (ETH_TYPE=0x0800, IP_PROTO=1)()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
 
