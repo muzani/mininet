@@ -43,14 +43,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         self.install_default_flow(ev.msg.datapath)
     
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
-    def packet_in_handler(self, ev):
-    
-        # If you hit this you might want to increase
-        # the "miss_send_length" of your switch
-        if ev.msg.msg_len < ev.msg.total_len:
-            self.logger.debug("packet truncated: only %s of %s bytes",
-                              ev.msg.msg_len, ev.msg.total_len)
-                              
+    def packet_in_handler(self, ev):                             
         """Menangani paket yang datang ke controller."""
         msg = ev.msg
         pkt = packet.Packet(msg.data)
@@ -60,6 +53,11 @@ class EmailNotificationRyu(app_manager.RyuApp):
         
         datapath = msg.datapath
         dpid = datapath.id    
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocols(ethernet.ethernet)[0]
+        dst = eth.dst
+        src = eth.src
+
         pkt_arp = pkt.get_protocol(arp.arp)
         pkt_icmp = pkt.get_protocol(icmp.icmp)
         pkt_ip = pkt.get_protocol(ipv4.ipv4)
