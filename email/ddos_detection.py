@@ -4,6 +4,8 @@ from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cl
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ipv4, icmp
 from collections import defaultdict
+from ryu.ofproto.ofproto_v1_3 import OFPMatch
+from ryu.ofproto.ofproto_v1_3 import OFPActionOutput
 
 # Fungsi pengiriman email
 import smtplib
@@ -73,7 +75,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         
         # Membuat match untuk menangani semua paket (default flow)
-        match = parser.OFPMatch()
+        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
         
         # Menambahkan flow ke switch untuk menangani semua paket
