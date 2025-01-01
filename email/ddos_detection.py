@@ -71,6 +71,34 @@ class EmailNotificationRyu(app_manager.RyuApp):
             print("TCP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         #elif(pkt_udp): 
            #print("UDP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+           
+        # learn a mac address to avoid FLOOD next time.
+        self.mac_to_port[dpid][src] = in_port
+
+        if dst in self.mac_to_port[dpid]:
+            out_port = self.mac_to_port[dpid][dst]
+        else:
+            out_port = ofproto.OFPP_FLOOD
+
+        actions = [parser.OFPActionOutput(out_port)]
+
+        # install a flow to avoid packet_in next time
+        if out_port != ofproto.OFPP_FLOOD:
+            #########################################################
+            if(len(self.mac_ip_to_dp[src]) > 5):
+                    self.ddos_oocurs=True
+                    print("DDos occur from src ", src)
+                    match1 = parser.OFPMatch( eth_dst=dst, eth_src=src)
+                    match2 = parser.OFPMatch( eth_src=src)     #block src only with low priority
+                    self.add_flow(datapath, 114, match1, [],idle=30, hard=100*3)  					
+                    for dp in self.datapaths.values():
+                        if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+                            self.add_flow(dp, 110, match1, [],msg.buffer_id, idle=30, hard=100*2)
+                            self.add_flow(dp, 108, match2, [],msg.buffer_id, idle=30, hard=100*2)
+							
+                        else:
+                            self.add_flow(dp, 110, match1, [],idle=30, hard=100*2)
+                            self.add_flow(dp, 108, match2, [], idle=30, hard=100*2)
         
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
@@ -104,11 +132,28 @@ class EmailNotificationRyu(app_manager.RyuApp):
         self.add_flow(datapath, 0, match, actions)
 
     def add_flow(self, datapath, priority, match, actions):
-        """Menambahkan flow ke switch."""
+        # """Menambahkan flow ke switch."""
+        # ofproto = datapath.ofproto
+        # parser = datapath.ofproto_parser
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        # mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
+        # datapath.send_msg(mod)
+        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
-        mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
+
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+                                             actions)]
+        if buffer_id:
+            mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
+                                    idle_timeout=idle, hard_timeout=hard,
+                                    priority=priority, match=match,
+                                    instructions=inst)
+        else:
+            mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
+                                    idle_timeout=idle, hard_timeout=hard,
+                                    match=match, instructions=inst)
+            
         datapath.send_msg(mod)
         
     def send_email(subject, message, to_email, from_email, password):
