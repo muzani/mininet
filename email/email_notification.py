@@ -30,7 +30,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
 
         # Konfigurasi email
         self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
-        self.password = ""  # Ganti dengan password email Anda
+        self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
         self.to_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
