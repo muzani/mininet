@@ -45,28 +45,42 @@ class EmailNotificationRyu(app_manager.RyuApp):
         msg = ev.msg
         pkt = packet.Packet(msg.data)
         
-        eth = pkt.get_protocol(ethernet.ethernet)
-        if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
-            ip_pkt = pkt.get_protocol(ipv4.ipv4)
-            icmp_pkt = pkt.get_protocol(icmp.icmp)
+        #eth = pkt.get_protocol(ethernet.ethernet)
+        #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
             
-            # Log untuk paket yang diterima
-            if ip_pkt and icmp_pkt:
-                src_ip = ip_pkt.src
-                dest_ip = ip_pkt.dst
-                self.packet_counts[src_ip] += 1
-                self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+        pkt_arp = pkt.get_protocol(arp.arp)
+        pkt_icmp = pkt.get_protocol(icmp.icmp)
+        pkt_ip = pkt.get_protocol(ipv4.ipv4)
+        pkt_tcp = pkt.get_protocol(tcp.tcp)
+        pkt_udp = pkt.get_protocol(udp.udp)
+        if(pkt_arp): 
+            print("arp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        elif(pkt_icmp): 
+            print("icmp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)            
+        elif(pkt_tcp): 
+            print("tcp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        elif(pkt_udp): 
+            print("udp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        
+        ip_pkt = pkt.get_protocol(ipv4.ipv4)
+        icmp_pkt = pkt.get_protocol(icmp.icmp)
+        # Log untuk paket yang diterima
+        if ip_pkt and icmp_pkt:
+            src_ip = ip_pkt.src
+            dest_ip = ip_pkt.dst
+            self.packet_counts[src_ip] += 1
+            self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+            
+            if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
+                # Kirim email notifikasi jika terjadi serangan
+                switch_id = ev.msg.datapath.id
+                subject = "Notifikasi SDN - Terjadi Serangan"
+                message = f"Terjadi serangan pada switch dengan ID {switch_id} "        
+                send_email(subject, message, self.to_email, self.from_email, self.password)
+                self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
                 
-                if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
-                    # Kirim email notifikasi jika terjadi serangan
-                    switch_id = ev.msg.datapath.id
-                    subject = "Notifikasi SDN - Terjadi Serangan"
-                    message = f"Terjadi serangan pada switch dengan ID {switch_id} "        
-                    send_email(subject, message, self.to_email, self.from_email, self.password)
-                    self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
-                    
-                    #self.send_email_alert(src_ip)
-                    self.email_sent.add(src_ip)
+                #self.send_email_alert(src_ip)
+                self.email_sent.add(src_ip)
 
     def install_default_flow(self, datapath):
         ofproto = datapath.ofproto
