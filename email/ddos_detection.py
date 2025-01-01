@@ -64,13 +64,13 @@ class EmailNotificationRyu(app_manager.RyuApp):
         pkt_tcp = pkt.get_protocol(tcp.tcp)
         pkt_udp = pkt.get_protocol(udp.udp)
         if(pkt_arp): 
-            print("arp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("arp packet are receveived at dpid ",dpid," from src ",pkt_arp.src, " to dst ",pkt_arp.dst)
         elif(pkt_icmp): 
-            print("icmp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)            
+            print("icmp packet are receveived at dpid ",dpid," from src ",pkt_icmp.src, " to dst ",pkt_icmp.dst)            
         elif(pkt_tcp): 
-            print("tcp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("tcp packet are receveived at dpid ",dpid," from src ",pkt_tcp.src, " to dst ",pkt_tcp.dst)
         elif(pkt_udp): 
-            print("udp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("udp packet are receveived at dpid ",dpid," from src ",pkt_udp.src, " to dst ",pkt_udp.dst)
         
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
