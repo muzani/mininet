@@ -53,7 +53,7 @@ class DDoSDetection(app_manager.RyuApp):
     def send_email_alert(self, src_ip):
         """Mengirim notifikasi email jika serangan terdeteksi."""
         sender_email = "socialme.black@gmail.com"
-        sender_password = "fjjuaalypwpwxyrn"
+        sender_password = "jyzemtausobocqjy"
         recipient_email = "zanimumu@gmail.com"
         subject = "DDoS Alert Detected"
         body = f"Potensi serangan DDoS terdeteksi dari IP: {src_ip}.\nJumlah paket melebihi threshold."
