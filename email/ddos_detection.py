@@ -52,20 +52,22 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def packet_in_handler(self, ev):
         msg = ev.msg
         pkt = packet.Packet(msg.data)
-
-        ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        icmp_pkt = pkt.get_protocol(icmp.icmp)
         
-        if ip_pkt and icmp_pkt:
-            src_ip = ip_pkt.src
-            dest_ip = ip_pkt.dst
-            self.packet_counts[src_ip] += 1
-            self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+        eth = pkt.get_protocol(ethernet.ethernet)
+        if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
+            ip_pkt = pkt.get_protocol(ipv4.ipv4)
+            icmp_pkt = pkt.get_protocol(icmp.icmp)
             
+            if ip_pkt and icmp_pkt:
+                src_ip = ip_pkt.src
+                dest_ip = ip_pkt.dst
+                self.packet_counts[src_ip] += 1
+                self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+                
 
-            # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
-                # self.send_email_alert(src_ip)
-                # self.email_sent.add(src_ip)
+                # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
+                    # self.send_email_alert(src_ip)
+                    # self.email_sent.add(src_ip)
 
     def install_default_flow(self, datapath):
         ofproto = datapath.ofproto
