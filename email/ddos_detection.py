@@ -56,8 +56,9 @@ class EmailNotificationRyu(app_manager.RyuApp):
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         if ip_pkt:
             src_ip = ip_pkt.src
+            dest_ip = ip_pkt.dst
             self.packet_counts[src_ip] += 1
-            self.logger.info("Packet from %s: count = %d", src_ip, self.packet_counts[src_ip])
+            self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
 
             # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
                 # self.send_email_alert(src_ip)

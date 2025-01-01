@@ -36,6 +36,7 @@ class MyTopo( Topo ):
         s1 = self.addSwitch( 's1') #, cls=OVSBridge
         s2 = self.addSwitch( 's2')
         s3 = self.addSwitch( 's3')
+        s3 = self.addSwitch( 's4')
 
         # Add links between host and switchs
         self.addLink( h1, s1 )
@@ -48,6 +49,7 @@ class MyTopo( Topo ):
         # Add link between switchs
         self.addLink( s1, s2 )
         self.addLink( s2, s3 )
+        self.addLink( s4, s1 )
         
 topos = { 'mytopo': ( lambda: MyTopo() ) }
 
