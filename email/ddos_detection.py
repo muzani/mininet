@@ -9,20 +9,7 @@ from collections import defaultdict
 import smtplib
 from email.mime.text import MIMEText
 
-def send_email(subject, message, to_email, from_email, password):
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(from_email, password)
-        msg = MIMEText(message)
-        msg['Subject'] = subject
-        msg['From'] = from_email
-        msg['To'] = to_email
-        server.sendmail(from_email, to_email, msg.as_string())
-        server.quit()
-        print("Email berhasil dikirim!")
-    except Exception as e:
-        print(f"Error mengirim email: {e}")
+
 
 class EmailNotificationRyu(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -30,6 +17,8 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(EmailNotificationRyu, self).__init__(*args, **kwargs)
         self.packet_counts = defaultdict(int)  # Penghitung paket per IP
+        self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
+        self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
         
         # Konfigurasi email
         self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
@@ -68,16 +57,23 @@ class EmailNotificationRyu(app_manager.RyuApp):
                 self.packet_counts[src_ip] += 1
                 self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
                 
-                # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
-                    # self.send_email_alert(src_ip)
-                    # self.email_sent.add(src_ip)
+                if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
+                    # Kirim email notifikasi jika terjadi serangan
+                    switch_id = ev.msg.datapath.id
+                    subject = "Notifikasi SDN - Terjadi Serangan"
+                    message = f"Terjadi serangan pada switch dengan ID {switch_id} "        
+                    send_email(subject, message, self.to_email, self.from_email, self.password)
+                    self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
+                    
+                    #self.send_email_alert(src_ip)
+                    self.email_sent.add(src_ip)
 
     def install_default_flow(self, datapath):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         
         # Membuat match untuk menangani semua paket (default flow)
-        match = parser.OFPMatch(eth_type=0x0800)  # ICMP (ETH_TYPE=0x0800, IP_PROTO=1)()
+        match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
         
         # Menambahkan flow ke switch untuk menangani semua paket
@@ -91,6 +87,42 @@ class EmailNotificationRyu(app_manager.RyuApp):
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
         datapath.send_msg(mod)
         
+    def send_email(subject, message, to_email, from_email, password):
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(from_email, password)
+            msg = MIMEText(message)
+            msg['Subject'] = subject
+            msg['From'] = from_email
+            msg['To'] = to_email
+            server.sendmail(from_email, to_email, msg.as_string())
+            server.quit()
+            print("Email berhasil dikirim!")
+        except Exception as e:
+            print(f"Error mengirim email: {e}")
+    
+    # def send_email_alert(self, src_ip):
+        # """Mengirim notifikasi email jika serangan terdeteksi."""
+        # sender_email = "socialme.black@gmail.com"
+        # sender_password = "jyzemtausobocqjy"
+        # recipient_email = "zanimumu@gmail.com"
+        # subject = "DDoS Alert Detected"
+        # body = f"Potensi serangan DDoS terdeteksi dari IP: {src_ip}.\nJumlah paket melebihi threshold."
+
+        # try:
+            # message = MIMEText(body)
+            # message["Subject"] = subject
+            # message["From"] = sender_email
+            # message["To"] = recipient_email
+
+            # with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                # server.starttls()
+                # server.login(sender_email, sender_password)
+                # server.sendmail(sender_email, recipient_email, message.as_string())
+            # self.logger.info("Email sent to %s", recipient_email)
+        # except Exception as e:
+            # self.logger.error("Failed to send email: %s", e)    
 
 #penjelasan program
 # Event Handler  switch_features_handler : adalah event handler yang akan dipanggil ketika switch pertama kali terhubung ke controller. Di sini, kita akan menambahkan flow untuk memastikan bahwa paket yang datang dikirimkan ke controller untuk diproses lebih lanjut
