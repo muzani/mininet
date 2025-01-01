@@ -3,6 +3,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet, ethernet, ipv4
+from collections import defaultdict
 
 # Fungsi pengiriman email
 import smtplib
@@ -28,7 +29,8 @@ class EmailNotificationRyu(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(EmailNotificationRyu, self).__init__(*args, **kwargs)
-
+        self.packet_counts = defaultdict(int)  # Penghitung paket per IP
+        
         # Konfigurasi email
         self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
         self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
