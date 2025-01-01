@@ -134,7 +134,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         # Menambahkan flow ke switch untuk menangani semua paket
         self.add_flow(datapath, 0, match, actions)
 
-    def add_flow(self, datapath, priority, match, actions):
+    def add_flow(self, datapath, priority, match, actions, buffer_id=None, idle=0, hard=0):
         # """Menambahkan flow ke switch."""
         # ofproto = datapath.ofproto
         # parser = datapath.ofproto_parser
