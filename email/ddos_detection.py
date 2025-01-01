@@ -2,7 +2,7 @@ from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet, ethernet, ipv4
+from ryu.lib.packet import packet, ethernet, ipv4, icmp
 from collections import defaultdict
 
 # Fungsi pengiriman email
@@ -54,11 +54,18 @@ class EmailNotificationRyu(app_manager.RyuApp):
         pkt = packet.Packet(msg.data)
 
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        if ip_pkt:
+        icmp_pkt = pkt.get_protocol(icmp.icmp)
+        
+        if ip_pkt and icmp_pkt:
             src_ip = ip_pkt.src
             dest_ip = ip_pkt.dst
             self.packet_counts[src_ip] += 1
             self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+            
+            src_ip_icmp = icmp_pkt.src
+            dest_ip_icmp = icmp_pkt.dst
+            self.packet_counts[src_ip_icmp] += 1
+            self.logger.info("Packet ping from %s ke IP %a : count = %d", src_ip_icmp, dest_ip_icmp, self.packet_counts[src_ip_icmp])
 
             # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
                 # self.send_email_alert(src_ip)
