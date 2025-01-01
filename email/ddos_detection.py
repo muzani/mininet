@@ -1,20 +1,20 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER, set_ev_cls
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from collections import defaultdict
 from ryu.lib.packet import packet, ethernet, ipv4
+from collections import defaultdict
+import smtplib
+from email.mime.text import MIMEText
 
 class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
-        self.packet_in_counter = defaultdict(lambda: defaultdict(int))
-        self.email_sent = set()
+        self.packet_counts = defaultdict(int)  # Penghitung paket per IP
+        self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
+        self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -38,49 +38,36 @@ class DDoSDetection(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         msg = ev.msg
-        datapath = msg.datapath
-        dpid = datapath.id
         pkt = packet.Packet(msg.data)
 
-        eth = pkt.get_protocol(ethernet.ethernet)
-        ip = pkt.get_protocol(ipv4.ipv4)
+        ip_pkt = pkt.get_protocol(ipv4.ipv4)
+        if ip_pkt:
+            src_ip = ip_pkt.src
+            self.packet_counts[src_ip] += 1
+            self.logger.info("Packet from %s: count = %d", src_ip, self.packet_counts[src_ip])
 
-        if ip:
-            src_ip = ip.src
-            self.packet_in_counter[dpid][src_ip] += 1
-            if self.packet_in_counter[dpid][src_ip] > 50:  # Threshold
-                if src_ip not in self.email_sent:
-                    self.send_email_alert(src_ip, dpid)
-                    self.email_sent.add(src_ip)
+            if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
+                self.send_email_alert(src_ip)
+                self.email_sent.add(src_ip)
 
-    def send_email_alert(self, src_ip, dpid):
-        """Mengirim email jika serangan DDoS terdeteksi."""
-        sender_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
-        sender_password = "fjjuaalypwpwxyrn"     # Ganti dengan password Anda
-        recipient_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
-
-        subject = "DDoS Alert: Potensi Serangan Terdeteksi"
-        body = (
-            f"Potensi serangan DDoS terdeteksi:\n\n"
-            f"Sumber IP: {src_ip}\n"
-            f"Switch ID: {dpid}\n"
-            f"Jumlah paket mencurigakan melebihi threshold.\n\n"
-            f"Harap segera periksa sistem jaringan Anda."
-        )
-
-        # Konfigurasi email
-        message = MIMEMultipart()
-        message["From"] = sender_email
-        message["To"] = recipient_email
-        message["Subject"] = subject
-        message.attach(MIMEText(body, "plain"))
+    def send_email_alert(self, src_ip):
+        """Mengirim notifikasi email jika serangan terdeteksi."""
+        sender_email = "socialme.black@gmail.com"
+        sender_password = "fjjuaalypwpwxyrn"
+        recipient_email = "zanimumu@gmail.com"
+        subject = "DDoS Alert Detected"
+        body = f"Potensi serangan DDoS terdeteksi dari IP: {src_ip}.\nJumlah paket melebihi threshold."
 
         try:
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, recipient_email, message.as_string())
-            self.logger.info("Notifikasi email terkirim ke %s", recipient_email)
-            server.quit()
+            message = MIMEText(body)
+            message["Subject"] = subject
+            message["From"] = sender_email
+            message["To"] = recipient_email
+
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.sendmail(sender_email, recipient_email, message.as_string())
+            self.logger.info("Email sent to %s", recipient_email)
         except Exception as e:
-            self.logger.error("Gagal mengirim email: %s", str(e))
+            self.logger.error("Failed to send email: %s", e)
