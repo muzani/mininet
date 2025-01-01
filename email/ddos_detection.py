@@ -56,7 +56,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
         
-        if ip_pkt or icmp_pkt:
+        if ip_pkt and icmp_pkt:
             src_ip = ip_pkt.src
             dest_ip = ip_pkt.dst
             self.packet_counts[src_ip] += 1
