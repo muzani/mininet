@@ -70,7 +70,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         elif(pkt_tcp): 
             print("tcp packet are receveived at dpid ",dpid," from src ",pkt_tcp.src, " to dst ",pkt_tcp.dst)
         elif(pkt_udp): 
-            print("udp packet are receveived at dpid ",dpid," from src ",pkt_udp.src, " to dst ",pkt_udp.dst)
+            print("udp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
