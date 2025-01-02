@@ -55,6 +55,7 @@ from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.ofproto.ofproto_v1_2 import OFPG_ANY
 from ryu.ofproto.ofproto_v1_3 import OFP_VERSION
 from ryu.lib.mac import haddr_to_bin
+import logging
 ###################
 
 class DDoSDetection(app_manager.RyuApp):
@@ -76,6 +77,13 @@ class DDoSDetection(app_manager.RyuApp):
         self.ddos_oocurs=False
         self.src_of_DDOS =0     #src mac
         self.monitor_thread = hub.spawn(self._monitor)
+        
+        # Konfigurasi email
+        self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
+        self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
+        self.to_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
+        
+        logging.getLogger("ryu").setLevel(logging.CRITICAL)
 
     def _monitor(self):
         while True:
@@ -180,15 +188,6 @@ class DDoSDetection(app_manager.RyuApp):
 
                     return-2
 
-                    
-                
-                
-                
-                                # match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,
-                                # ipv4_src=srcip,
-                                # ipv4_dst=dstip,
-                                # in_port =in_port
-                                # )
 
                 # if ICMP Protocol
                 if protocol == in_proto.IPPROTO_ICMP:
@@ -229,3 +228,19 @@ class DDoSDetection(app_manager.RyuApp):
         out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
         datapath.send_msg(out)
+        
+        
+    def send_email(subject, message, to_email, from_email, password):
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(from_email, password)
+            msg = MIMEText(message)
+            msg['Subject'] = subject
+            msg['From'] = from_email
+            msg['To'] = to_email
+            server.sendmail(from_email, to_email, msg.as_string())
+            server.quit()
+            print("Email berhasil dikirim!")
+        except Exception as e:
+            print(f"Error mengirim email: {e}")
