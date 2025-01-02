@@ -164,7 +164,7 @@ class DDoSDetection(app_manager.RyuApp):
             protocol = ip.proto
             self.mac_ip_to_dp[src][ip.src] = 0          
             #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
-            #print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
+            print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
             if(len(self.mac_ip_to_dp[src]) > 30):
                 self.ddos_oocurs=True
                 print("DDos occur from src ", src)
