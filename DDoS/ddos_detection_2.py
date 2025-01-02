@@ -141,22 +141,17 @@ class DDoSDetection(app_manager.RyuApp):
 
         dpid = datapath.id
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        icmp_pkt = pkt.get_protocol(icmp.icmp)
-                
+        
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           
         
         #print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
         
-        if icmp_pkt:
-            src_ip = ip_pkt.src
-            dest_ip = ip_pkt.dst
-            self.packet_counts[src_ip] += 1
-            print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
             
         # check IP Protocol and create a match for IP
         if eth.ethertype == ether_types.ETH_TYPE_IP:
             ip = pkt.get_protocol(ipv4.ipv4)
+            icmp_pkt = pkt.get_protocol(icmp.icmp)
             srcip = ip.src
             dstip = ip.dst
             protocol = ip.proto
@@ -166,8 +161,8 @@ class DDoSDetection(app_manager.RyuApp):
             #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
             print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
             
-            if(len(self.mac_ip_to_dp[src]) > 30):
-            #if self.packet_counts[src_ip] > 30:
+            #if(len(self.mac_ip_to_dp[src]) > 50):
+            if self.packet_counts[src_ip] > 30 and icmp_pkt:
                 self.ddos_oocurs=True
                 print("DDos occur from src ", src)
                 match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
