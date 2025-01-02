@@ -14,11 +14,11 @@ from email.mime.text import MIMEText
 
 
 
-class EmailNotificationRyu(app_manager.RyuApp):
+class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(EmailNotificationRyu, self).__init__(*args, **kwargs)
+        super(DDoSDetection, self).__init__(*args, **kwargs)
         self.packet_counts = defaultdict(int)  # Penghitung paket per IP
         self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
         self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
@@ -27,11 +27,24 @@ class EmailNotificationRyu(app_manager.RyuApp):
         self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
         self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
         self.to_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
+        
+        self.mac_to_port = {}
+        self.mac_ip_to_dp = {}            #dict 
+        self.datapaths = {}
+        self.match_miss_flow_entry = ""
+        self.actions_miss_flow_entry = ""
+        self.ddos_oocurs=False
+        self.src_of_DDOS =0     #src mac
+        self.monitor_thread = hub.spawn(self._monitor)
+        
+    def _monitor(self):
+        while True:
+            hub.sleep(10) 
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         """Menambahkan flow saat switch pertama kali terhubung ke controller."""
-        
+        self.logger.info("Switch connected: %s", ev.msg.datapath.id)
         # Kirim email notifikasi saat switch baru terhubung
         # switch_id = ev.msg.datapath.id
         # subject = "Notifikasi SDN - Switch Baru Terhubung"
@@ -40,108 +53,20 @@ class EmailNotificationRyu(app_manager.RyuApp):
         # self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
         
         #kirim email jika ada serangan
-        self.install_default_flow(ev.msg.datapath)
-    
-    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
-    def packet_in_handler(self, ev):                             
-        """Menangani paket yang datang ke controller."""
-        msg = ev.msg
-        pkt = packet.Packet(msg.data)
+        #self.install_default_flow(ev.msg.datapath)
         
-        #eth = pkt.get_protocol(ethernet.ethernet)
-        #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
-        
-        datapath = msg.datapath
-        dpid = datapath.id    
-        pkt = packet.Packet(msg.data)
-        eth = pkt.get_protocols(ethernet.ethernet)[0]
-        dst = eth.dst
-        src = eth.src
+        datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        in_port = msg.match['in_port']
 
-        pkt_arp = pkt.get_protocol(arp.arp)
-        pkt_icmp = pkt.get_protocol(icmp.icmp)
-        pkt_ip = pkt.get_protocol(ipv4.ipv4)
-        pkt_tcp = pkt.get_protocol(tcp.tcp)
-        pkt_udp = pkt.get_protocol(udp.udp)
-        if(pkt_arp): 
-            print("ARP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-        elif(pkt_icmp): 
-            print("ICMP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)            
-        elif(pkt_tcp): 
-            print("TCP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-        #elif(pkt_udp): 
-           #print("UDP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-           
-        # learn a mac address to avoid FLOOD next time.
-        # self.mac_to_port[dpid][src] = in_port
-
-        # if dst in self.mac_to_port[dpid]:
-            # out_port = self.mac_to_port[dpid][dst]
-        # else:
-            # out_port = ofproto.OFPP_FLOOD
-
-        # actions = [parser.OFPActionOutput(out_port)]
-
-        # install a flow to avoid packet_in next time
-        if out_port != ofproto.OFPP_FLOOD:
-            #########################################################
-            if(len(self.mac_ip_to_dp[src]) > 5):
-                    self.ddos_oocurs=True
-                    print("DDos occur from src ", src)
-                    match1 = parser.OFPMatch( eth_dst=dst, eth_src=src)
-                    match2 = parser.OFPMatch( eth_src=src)     #block src only with low priority
-                    self.add_flow(datapath, 114, match1, [],idle=30, hard=100*3)  					
-                    for dp in self.datapaths.values():
-                        if msg.buffer_id != ofproto.OFP_NO_BUFFER:
-                            self.add_flow(dp, 110, match1, [],msg.buffer_id, idle=30, hard=100*2)
-                            self.add_flow(dp, 108, match2, [],msg.buffer_id, idle=30, hard=100*2)
-							
-                        else:
-                            self.add_flow(dp, 110, match1, [],idle=30, hard=100*2)
-                            self.add_flow(dp, 108, match2, [], idle=30, hard=100*2)
-        
-        ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        icmp_pkt = pkt.get_protocol(icmp.icmp)
-        # Log untuk paket yang diterima
-        if ip_pkt and icmp_pkt:
-            src_ip = ip_pkt.src
-            dest_ip = ip_pkt.dst
-            self.packet_counts[src_ip] += 1
-            self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
-            
-            if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
-                # Kirim email notifikasi jika terjadi serangan
-                switch_id = ev.msg.datapath.id
-                subject = "Notifikasi SDN - Terjadi Serangan"
-                message = f"Terjadi serangan pada switch dengan ID {switch_id} "        
-                send_email(subject, message, self.to_email, self.from_email, self.password)
-                self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
-                
-                #self.send_email_alert(src_ip)
-                self.email_sent.add(src_ip)
-
-    def install_default_flow(self, datapath):
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-        
-        # Membuat match untuk menangani semua paket (default flow)
-        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1)
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
-        
-        # Menambahkan flow ke switch untuk menangani semua paket
+        match = parser.OFPMatch()
+        self.match_miss_flow_entry = match
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                          ofproto.OFPCML_NO_BUFFER)]
+        self.actions_miss_flow_entry = actions                                          
         self.add_flow(datapath, 0, match, actions)
-
+    
     def add_flow(self, datapath, priority, match, actions, buffer_id=None, idle=0, hard=0):
-        # """Menambahkan flow ke switch."""
-        # ofproto = datapath.ofproto
-        # parser = datapath.ofproto_parser
-        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
-        # mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
-        # datapath.send_msg(mod)
-        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -158,6 +83,90 @@ class EmailNotificationRyu(app_manager.RyuApp):
                                     match=match, instructions=inst)
             
         datapath.send_msg(mod)
+    
+    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    def packet_in_handler(self, ev):                             
+        # If you hit this you might want to increase
+        # the "miss_send_length" of your switch
+        if ev.msg.msg_len < ev.msg.total_len:
+            self.logger.debug("packet truncated: only %s of %s bytes",
+                              ev.msg.msg_len, ev.msg.total_len)
+        msg = ev.msg
+        datapath = msg.datapath
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        in_port = msg.match['in_port']
+
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocols(ethernet.ethernet)[0]
+
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+            return
+        dst = eth.dst
+        src = eth.src
+        if(self.src_of_DDOS != src) and self.ddos_oocurs:
+            self.ddos_oocurs = 0
+            self.mac_ip_to_dp ={}
+            return          #during DDOS
+
+        dpid = datapath.id
+        self.mac_to_port.setdefault(dpid, {})
+        self.mac_ip_to_dp.setdefault(src, {})           #src as key
+        print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        
+        # """Menangani paket yang datang ke controller."""
+        # msg = ev.msg
+        # datapath = msg.datapath
+        # pkt = packet.Packet(msg.data)
+        # dpid = datapath.id
+        # eth = pkt.get_protocols(ethernet.ethernet)[0]
+        # dst = eth.dst
+        # src = eth.src
+        # ofproto = datapath.ofproto
+        # parser = datapath.ofproto_parser
+        # in_port = msg.match['in_port']
+        
+        # #eth = pkt.get_protocol(ethernet.ethernet)
+        # #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
+        
+        # ip_pkt = pkt.get_protocol(ipv4.ipv4)
+        # icmp_pkt = pkt.get_protocol(icmp.icmp)
+        # # Log untuk paket yang diterima
+        # if ip_pkt and icmp_pkt:
+            # src_ip = ip_pkt.src
+            # dest_ip = ip_pkt.dst
+            # self.packet_counts[src_ip] += 1
+            # self.logger.info("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+            
+            # if self.packet_counts[src_ip] > self.threshold and src_ip not in self.email_sent:
+                # # Kirim email notifikasi jika terjadi serangan
+                # switch_id = ev.msg.datapath.id
+                # subject = "Notifikasi SDN - Terjadi Serangan"
+                # message = f"Terjadi serangan pada switch dengan ID {switch_id} "        
+                # send_email(subject, message, self.to_email, self.from_email, self.password)
+                # self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
+                
+                # #self.send_email_alert(src_ip)
+                # self.email_sent.add(src_ip)
+
+    def install_default_flow(self, datapath):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        
+        # Membuat match untuk menangani semua paket (default flow)
+        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1)
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
+        
+        # Menambahkan flow ke switch untuk menangani semua paket
+        self.add_flow(datapath, 0, match, actions)
+
+    def add_flow(self, datapath, priority, match, actions):
+        # """Menambahkan flow ke switch."""
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
+        datapath.send_msg(mod)
         
     def send_email(subject, message, to_email, from_email, password):
         try:
@@ -172,29 +181,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
             server.quit()
             print("Email berhasil dikirim!")
         except Exception as e:
-            print(f"Error mengirim email: {e}")
-    
-    # def send_email_alert(self, src_ip):
-        # """Mengirim notifikasi email jika serangan terdeteksi."""
-        # sender_email = "socialme.black@gmail.com"
-        # sender_password = "jyzemtausobocqjy"
-        # recipient_email = "zanimumu@gmail.com"
-        # subject = "DDoS Alert Detected"
-        # body = f"Potensi serangan DDoS terdeteksi dari IP: {src_ip}.\nJumlah paket melebihi threshold."
-
-        # try:
-            # message = MIMEText(body)
-            # message["Subject"] = subject
-            # message["From"] = sender_email
-            # message["To"] = recipient_email
-
-            # with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                # server.starttls()
-                # server.login(sender_email, sender_password)
-                # server.sendmail(sender_email, recipient_email, message.as_string())
-            # self.logger.info("Email sent to %s", recipient_email)
-        # except Exception as e:
-            # self.logger.error("Failed to send email: %s", e)    
+            print(f"Error mengirim email: {e}") 
 
 #penjelasan program
 # Event Handler  switch_features_handler : adalah event handler yang akan dipanggil ketika switch pertama kali terhubung ke controller. Di sini, kita akan menambahkan flow untuk memastikan bahwa paket yang datang dikirimkan ke controller untuk diproses lebih lanjut
