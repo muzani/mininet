@@ -49,7 +49,7 @@ class DDoSDetection(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
-        #self.packet_counts = defaultdict(int)  # Penghitung paket per IP
+        self.packet_counts = defaultdict(int)  # Penghitung paket per IP
         self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
         self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
         
