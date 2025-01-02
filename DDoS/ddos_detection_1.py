@@ -31,7 +31,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         """Menambahkan flow saat switch pertama kali terhubung ke controller."""
-        
+        self.logger.info("Switch connected: %s", ev.msg.datapath.id)
         # Kirim email notifikasi saat switch baru terhubung
         # switch_id = ev.msg.datapath.id
         # subject = "Notifikasi SDN - Switch Baru Terhubung"
