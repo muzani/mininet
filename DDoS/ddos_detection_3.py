@@ -184,7 +184,7 @@ class DDoSDetection(app_manager.RyuApp):
                 self.mac_ip_to_dp[src][ip.src] = 0          
                 #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
                 #print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
-                if(len(self.mac_ip_to_dp[src]) > 3):
+                if(len(self.mac_ip_to_dp[src]) > 0):
                     self.ddos_oocurs=True
                     print("DDos occur from src ", src)
                     match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
