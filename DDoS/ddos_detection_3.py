@@ -57,11 +57,11 @@ from ryu.ofproto.ofproto_v1_3 import OFP_VERSION
 from ryu.lib.mac import haddr_to_bin
 ###################
 
-class SimpleSwitch13(app_manager.RyuApp):
+class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(SimpleSwitch13, self).__init__(*args, **kwargs)
+        super(DDoSDetection, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
         self.mac_ip_to_dp = {}            #dict 
         self.datapaths = {}
