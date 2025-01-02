@@ -160,7 +160,7 @@ class DDoSDetection(app_manager.RyuApp):
             srcip = ip.src
             dstip = ip.dst
             protocol = ip.proto
-            self.mac_ip_to_dp[src][ip.src] = 0          
+            self.mac_ip_to_dp[src][ip.src] += 1          
             #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
             print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
             if(len(self.mac_ip_to_dp[src]) > 30):
