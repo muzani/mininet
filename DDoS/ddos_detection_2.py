@@ -142,7 +142,16 @@ class DDoSDetection(app_manager.RyuApp):
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           #src as key
-        print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        #print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        
+        ip_pkt = pkt.get_protocol(ipv4.ipv4)
+        icmp_pkt = pkt.get_protocol(icmp.icmp)
+        if ip_pkt and icmp_pkt:
+            src_ip = ip_pkt.src
+            dest_ip = ip_pkt.dst
+            self.packet_counts[src_ip] += 1
+            print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+            
         
         # """Menangani paket yang datang ke controller."""
         # msg = ev.msg
