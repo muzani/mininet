@@ -54,7 +54,7 @@ class DDoSDetectionSensitive(app_manager.RyuApp):
         if current_time - self.start_time >= 1:
             for dpid, src_counts in self.packet_in_counter.items():
                 for src_ip, count in src_counts.items():
-                    if count > 50:  # Threshold untuk setiap IP sumber
+                    if count > 1:  # Threshold untuk setiap IP sumber
                         self.logger.warning(
                             "Potensi serangan DDoS dari IP %s di switch %s: %d Packet-In per detik",
                             src_ip, dpid, count)
