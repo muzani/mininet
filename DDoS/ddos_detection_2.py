@@ -177,6 +177,22 @@ class DDoSDetection(app_manager.RyuApp):
                                         ipv4_src=srcip, ipv4_dst=dstip,
                                         ip_proto=protocol,icmpv4_code=t.code,
                                         icmpv4_type=t.type)
+            
+            # verify if we have a valid buffer_id, if yes avoid to send both
+            # flow_mod & packet_out
+            if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+                self.add_flow(datapath, 10, match, actions, msg.buffer_id, idle=20, hard=100*3)
+                return
+            else:
+                self.add_flow(datapath, 10, match, actions, idle=20, hard=100*3)
+        
+        data = None
+        if msg.buffer_id == ofproto.OFP_NO_BUFFER:
+            data = msg.data
+
+        out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
+                                  in_port=in_port, actions=actions, data=data)
+        datapath.send_msg(out)
                    
         # """Menangani paket yang datang ke controller."""
         # msg = ev.msg
