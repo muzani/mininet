@@ -141,12 +141,11 @@ class DDoSDetection(app_manager.RyuApp):
 
         dpid = datapath.id
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        
+                        
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           
         
         #print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
-        
             
         # check IP Protocol and create a match for IP
         if eth.ethertype == ether_types.ETH_TYPE_IP:
@@ -156,7 +155,7 @@ class DDoSDetection(app_manager.RyuApp):
             dstip = ip.dst
             protocol = ip.proto
             self.mac_ip_to_dp[src][ip.src] = 0
-            self.packet_counts[src_ip] += 1
+            self.packet_counts[srcip] += 1
             
             #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
             print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
