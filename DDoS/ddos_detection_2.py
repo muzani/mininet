@@ -142,8 +142,7 @@ class DDoSDetection(app_manager.RyuApp):
         dpid = datapath.id
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
-        src_ip = ip_pkt.src
-        dest_ip = ip_pkt.dst
+        
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           
         
@@ -153,10 +152,25 @@ class DDoSDetection(app_manager.RyuApp):
         if icmp_pkt:
             src_ip = ip_pkt.src
             dest_ip = ip_pkt.dst
-            #self.packet_counts[src_ip] += 1
             print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip)
             
-        
+        # check IP Protocol and create a match for IP
+        if eth.ethertype == ether_types.ETH_TYPE_IP:
+            ip = pkt.get_protocol(ipv4.ipv4)
+            srcip = ip.src
+            dstip = ip.dst
+            protocol = ip.proto
+            self.mac_ip_to_dp[src][ip.src] = 0          
+            #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
+            #print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
+            if(len(self.mac_ip_to_dp[src]) > 30):
+                self.ddos_oocurs=True
+                print("DDos occur from src ", src)
+                match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
+                self.add_flow(datapath, 110, match, [], msg.buffer_id, idle=0, hard=100*3*2)
+
+                return-2
+            
         # """Menangani paket yang datang ke controller."""
         # msg = ev.msg
         # datapath = msg.datapath
