@@ -152,8 +152,8 @@ class DDoSDetection(app_manager.RyuApp):
         print("msg ICMP from IP ",icmp_pkt," src IP is ",src_ip," dst IP is ",dest_ip)
         
         if icmp_pkt:
-            src_ip = ip_pkt.src
-            dest_ip = ip_pkt.dst
+            #src_ip = ip_pkt.src
+            #dest_ip = ip_pkt.dst
             print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip)
             
         # check IP Protocol and create a match for IP
