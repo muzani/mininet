@@ -57,6 +57,10 @@ from ryu.ofproto.ofproto_v1_3 import OFP_VERSION
 from ryu.lib.mac import haddr_to_bin
 import logging
 ###################
+# Fungsi pengiriman email
+from collections import defaultdict
+import smtplib
+from email.mime.text import MIMEText
 
 class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
