@@ -38,6 +38,7 @@ from ryu.lib.mac import haddr_to_bin
 ###################
 
 # Fungsi pengiriman email
+from collections import defaultdict
 import smtplib
 from email.mime.text import MIMEText
 
