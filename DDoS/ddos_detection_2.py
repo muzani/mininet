@@ -160,12 +160,14 @@ class DDoSDetection(app_manager.RyuApp):
             srcip = ip.src
             dstip = ip.dst
             protocol = ip.proto
-            self.mac_ip_to_dp[src][ip.src] = 0          
+            self.mac_ip_to_dp[src][ip.src] = 0
+            self.packet_counts[src_ip] += 1
+            
             #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
             print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
-            self.packet_counts[src_ip] += 1
-            #if(len(self.mac_ip_to_dp[src]) > 30):
-            if self.packet_counts[src_ip] > 30:
+            
+            if(len(self.mac_ip_to_dp[src]) > 30):
+            #if self.packet_counts[src_ip] > 30:
                 self.ddos_oocurs=True
                 print("DDos occur from src ", src)
                 match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
@@ -173,6 +175,14 @@ class DDoSDetection(app_manager.RyuApp):
 
                 return-2
             
+            # if ICMP Protocol
+            if protocol == in_proto.IPPROTO_ICMP:
+                t = pkt.get_protocol(icmp.icmp)
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,in_port=in_port,
+                                        ipv4_src=srcip, ipv4_dst=dstip,
+                                        ip_proto=protocol,icmpv4_code=t.code,
+                                        icmpv4_type=t.type)
+                   
         # """Menangani paket yang datang ke controller."""
         # msg = ev.msg
         # datapath = msg.datapath
