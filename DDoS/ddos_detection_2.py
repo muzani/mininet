@@ -142,18 +142,18 @@ class DDoSDetection(app_manager.RyuApp):
         dpid = datapath.id
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
-        src_ip = ip_pkt.src
-        dest_ip = ip_pkt.dst
+        #src_ip = ip_pkt.src
+        #dest_ip = ip_pkt.dst
         
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           
         
-        #print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
-        print("msg ICMP from IP ",icmp_pkt," src IP is ",src_ip," dst IP is ",dest_ip)
+        print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        #print("msg ICMP from IP ",icmp_pkt," src IP is ",src_ip," dst IP is ",dest_ip)
         
         if icmp_pkt:
-            #src_ip = ip_pkt.src
-            #dest_ip = ip_pkt.dst
+            src_ip = ip_pkt.src
+            dest_ip = ip_pkt.dst
             print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip)
             
         # check IP Protocol and create a match for IP
