@@ -46,62 +46,18 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def packet_in_handler(self, ev):                             
         """Menangani paket yang datang ke controller."""
         msg = ev.msg
-        pkt = packet.Packet(msg.data)
-        
-        #eth = pkt.get_protocol(ethernet.ethernet)
-        #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
-        
         datapath = msg.datapath
-        dpid = datapath.id    
         pkt = packet.Packet(msg.data)
+        dpid = datapath.id
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         dst = eth.dst
         src = eth.src
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
-
-        pkt_arp = pkt.get_protocol(arp.arp)
-        pkt_icmp = pkt.get_protocol(icmp.icmp)
-        pkt_ip = pkt.get_protocol(ipv4.ipv4)
-        pkt_tcp = pkt.get_protocol(tcp.tcp)
-        pkt_udp = pkt.get_protocol(udp.udp)
-        if(pkt_arp): 
-            print("ARP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-        elif(pkt_icmp): 
-            print("ICMP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)            
-        elif(pkt_tcp): 
-            print("TCP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-        #elif(pkt_udp): 
-           #print("UDP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
-           
-        # learn a mac address to avoid FLOOD next time.
-        self.mac_to_port[dpid][src] = in_port
-
-        if dst in self.mac_to_port[dpid]:
-            out_port = self.mac_to_port[dpid][dst]
-        else:
-            out_port = ofproto.OFPP_FLOOD
-
-        actions = [parser.OFPActionOutput(out_port)]
-
-        # install a flow to avoid packet_in next time
-        if out_port != ofproto.OFPP_FLOOD:
-            #########################################################
-            if(len(self.mac_ip_to_dp[src]) > 5):
-                    self.ddos_oocurs=True
-                    print("DDos occur from src ", src)
-                    match1 = parser.OFPMatch( eth_dst=dst, eth_src=src)
-                    match2 = parser.OFPMatch( eth_src=src)     #block src only with low priority
-                    self.add_flow(datapath, 114, match1, [],idle=30, hard=100*3)  					
-                    for dp in self.datapaths.values():
-                        if msg.buffer_id != ofproto.OFP_NO_BUFFER:
-                            self.add_flow(dp, 110, match1, [],msg.buffer_id, idle=30, hard=100*2)
-                            self.add_flow(dp, 108, match2, [],msg.buffer_id, idle=30, hard=100*2)
-							
-                        else:
-                            self.add_flow(dp, 110, match1, [],idle=30, hard=100*2)
-                            self.add_flow(dp, 108, match2, [], idle=30, hard=100*2)
+        
+        #eth = pkt.get_protocol(ethernet.ethernet)
+        #if eth.ethertype == 0x0800:  # Hanya proses paket IPv4
         
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
@@ -134,29 +90,12 @@ class EmailNotificationRyu(app_manager.RyuApp):
         # Menambahkan flow ke switch untuk menangani semua paket
         self.add_flow(datapath, 0, match, actions)
 
-    def add_flow(self, datapath, priority, match, actions, buffer_id=None, idle=0, hard=0):
+    def add_flow(self, datapath, priority, match, actions):
         # """Menambahkan flow ke switch."""
-        # ofproto = datapath.ofproto
-        # parser = datapath.ofproto_parser
-        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
-        # mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
-        # datapath.send_msg(mod)
-        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
-        if buffer_id:
-            mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
-                                    idle_timeout=idle, hard_timeout=hard,
-                                    priority=priority, match=match,
-                                    instructions=inst)
-        else:
-            mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                    idle_timeout=idle, hard_timeout=hard,
-                                    match=match, instructions=inst)
-            
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
         datapath.send_msg(mod)
         
     def send_email(subject, message, to_email, from_email, password):
@@ -172,29 +111,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
             server.quit()
             print("Email berhasil dikirim!")
         except Exception as e:
-            print(f"Error mengirim email: {e}")
-    
-    # def send_email_alert(self, src_ip):
-        # """Mengirim notifikasi email jika serangan terdeteksi."""
-        # sender_email = "socialme.black@gmail.com"
-        # sender_password = "jyzemtausobocqjy"
-        # recipient_email = "zanimumu@gmail.com"
-        # subject = "DDoS Alert Detected"
-        # body = f"Potensi serangan DDoS terdeteksi dari IP: {src_ip}.\nJumlah paket melebihi threshold."
-
-        # try:
-            # message = MIMEText(body)
-            # message["Subject"] = subject
-            # message["From"] = sender_email
-            # message["To"] = recipient_email
-
-            # with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                # server.starttls()
-                # server.login(sender_email, sender_password)
-                # server.sendmail(sender_email, recipient_email, message.as_string())
-            # self.logger.info("Email sent to %s", recipient_email)
-        # except Exception as e:
-            # self.logger.error("Failed to send email: %s", e)    
+            print(f"Error mengirim email: {e}") 
 
 #penjelasan program
 # Event Handler  switch_features_handler : adalah event handler yang akan dipanggil ketika switch pertama kali terhubung ke controller. Di sini, kita akan menambahkan flow untuk memastikan bahwa paket yang datang dikirimkan ke controller untuk diproses lebih lanjut
