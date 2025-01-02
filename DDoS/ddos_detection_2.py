@@ -49,7 +49,7 @@ class DDoSDetection(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
-        self.packet_counts = defaultdict(int)  # Penghitung paket per IP
+        #self.packet_counts = defaultdict(int)  # Penghitung paket per IP
         self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
         self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
         
@@ -140,17 +140,18 @@ class DDoSDetection(app_manager.RyuApp):
             return          #during DDOS
 
         dpid = datapath.id
+        ip_pkt = pkt.get_protocol(ipv4.ipv4)
+        icmp_pkt = pkt.get_protocol(icmp.icmp)
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           #src as key
         #print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        print("msg ICMP from IP ",icmp_pkt," src mac is ",src," dst mac is ",dst)
         
-        ip_pkt = pkt.get_protocol(ipv4.ipv4)
-        icmp_pkt = pkt.get_protocol(icmp.icmp)
         if icmp_pkt:
             src_ip = ip_pkt.src
             dest_ip = ip_pkt.dst
-            self.packet_counts[src_ip] += 1
-            print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip, self.packet_counts[src_ip])
+            #self.packet_counts[src_ip] += 1
+            print("Packet from %s ke IP %a : count = %d", src_ip, dest_ip)
             
         
         # """Menangani paket yang datang ke controller."""
