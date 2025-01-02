@@ -142,6 +142,8 @@ class DDoSDetection(app_manager.RyuApp):
         dpid = datapath.id
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
+        src_ip = ip_pkt.src
+        dest_ip = ip_pkt.dst
         
         self.mac_to_port.setdefault(dpid, {})
         self.mac_ip_to_dp.setdefault(src, {})           
