@@ -20,7 +20,7 @@ class DDoSDetection(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
         self.packet_counts = defaultdict(int)  # Penghitung paket per IP
-        self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
+        self.threshold = 20  # Ambang batas jumlah paket untuk DDoS
         self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
         
         # Konfigurasi email
@@ -140,3 +140,4 @@ class DDoSDetection(app_manager.RyuApp):
 # hping3 -S -p 80 --flood <IP_TARGET>
 # hping3 -S -p 6653 -i u1000 192.168.1.3
 # hping3 -1 -i u1000 192.168.1.3
+# hping3 -1 --flood 192.168.1.5
