@@ -113,6 +113,7 @@ class EmailNotificationRyu(app_manager.RyuApp):
         except Exception as e:
             print(f"Error mengirim email: {e}") 
 
+
 #penjelasan program
 # Event Handler  switch_features_handler : adalah event handler yang akan dipanggil ketika switch pertama kali terhubung ke controller. Di sini, kita akan menambahkan flow untuk memastikan bahwa paket yang datang dikirimkan ke controller untuk diproses lebih lanjut
 # Flow Default match = parser.OFPMatch() digunakan untuk mencocokkan semua paket. kita bisa menambahkan kriteria untuk memfilter jenis paket tertentu (misalnya, berdasarkan IP, protokol, atau alamat MAC)

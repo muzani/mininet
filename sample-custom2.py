@@ -40,11 +40,11 @@ class MyTopo( Topo ):
 
         # Add links between host and switchs
         self.addLink( h1, s1 )
-        self.addLink( h4, s1 )
-        self.addLink( h5, s1 )
-        self.addLink( h6, s1 )
-        self.addLink( h2, s2 )
-        self.addLink( h3, s3 )
+        self.addLink( h2, s1 )
+        self.addLink( h3, s1 )        
+        self.addLink( h4, s2 )
+        self.addLink( h5, s3 )
+        self.addLink( h6, s4 )
         
         # Add link between switchs
         self.addLink( s1, s2 )

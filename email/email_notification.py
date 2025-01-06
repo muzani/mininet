@@ -37,8 +37,8 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def switch_features_handler(self, ev):
         # Kirim email notifikasi saat switch baru terhubung
         switch_id = ev.msg.datapath.id
-        subject = "Notifikasi SDN - Switch Baru Terhubung"
-        message = f"Switch dengan ID {switch_id} telah terhubung ke controller."
+        subject = "Notifikasi SDN - Terjadi Serangan"
+        message = f"Switch dengan ID {switch_id} telah terjadi serangan."
         
         send_email(subject, message, self.to_email, self.from_email, self.password)
         self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")

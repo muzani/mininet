@@ -1,23 +1,3 @@
-# Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-# implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-#sudo ryu-manager  /home/ubuntu/sdn/projects/wifi/app1.py --observe-links --ofp-tcp-listen-port 6653
-
-
-
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
@@ -27,111 +7,265 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 
-
-###################
-
-
 from ryu.lib.packet import in_proto
 from ryu.lib.packet import ipv4
 from ryu.lib.packet import icmp
 from ryu.lib.packet import tcp
 from ryu.lib.packet import udp
-###############
-from operator import attrgetter
-from datetime import datetime
-from ryu.app import simple_switch_13
-from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
-from ryu.controller.handler import set_ev_cls
+from ryu.lib.packet import arp
+
 from ryu.lib import hub
-##################
+import csv
+import time
+import math
+import statistics
+
+from svm import SVM
+
+detect = 1
+mitigate = 1
+collectorType = 0
+timeIntrv = 2
+globalFlows = []
+pastSSIPLenght = 0
+prevFlowCount = 0
+
+flowSerialNo = 0
+iterate = 0
+
+#Bryan Oliver - Network Security Detector and Mitigator Controller
 
 
-from ryu.base.app_manager import RyuApp
-from ryu.controller.ofp_event import EventOFPSwitchFeatures
-from ryu.controller.handler import set_ev_cls
-from ryu.controller.handler import CONFIG_DISPATCHER
-from ryu.controller.handler import MAIN_DISPATCHER
-from ryu.ofproto.ofproto_v1_2 import OFPG_ANY
-from ryu.ofproto.ofproto_v1_3 import OFP_VERSION
-from ryu.lib.mac import haddr_to_bin
-import logging
-###################
-# Fungsi pengiriman email
-from collections import defaultdict
-import smtplib
-from email.mime.text import MIMEText
+# def getFlowNumb():
+    # global flowSerialNo
+    # flowSerialNo = flowSerialNo + 1
+    # return flowSerialNo
+
+
+# def initCsv_Port(dpid):
+    # fname = "switch_" + str(dpid) + "_data.csv"
+    # writ = csv.writer(open(fname, 'a', buffering=1), delimiter=',')
+    # header = ["time", "sfe","ssip","rfip","type"]
+    # writ.writerow(header)
+
+
+# def initCsv_FlowCount(dpid):
+    # fname = "switch_" + str(dpid) + "_flowcount.csv"
+    # writ = csv.writer(open(fname, 'a', buffering=1), delimiter=',')
+    # header = ["time", "flowcount"]
+    # writ.writerow(header)
+
+
+
+# def update_flowcountcsv(dpid, row):
+    # fname = "switch_" + str(dpid) + "_flowcount.csv"
+    # writ = csv.writer(open(fname, 'a', buffering=1), delimiter=',')
+    # writ.writerow(row)
+
+
+# def updateCsv_Port(dpid, row):
+    # fname = "sw_" + str(dpid) + "_data.csv"
+    # writ = csv.writer(open(fname, 'a', buffering=1), delimiter=',')
+    # row.append(str(collectorType))
+    # writ.writerow(row)
+
+
+# def updateCsv_resData(row):
+    # fname = "resData.csv"
+    # writ = csv.writer(open(fname, 'a', buffering=1), delimiter=',')
+    # row.append(str(collectorType))
+    # writ.writerow(row)
+
+
+
+
 
 class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
         super(DDoSDetection, self).__init__(*args, **kwargs)
-        self.mac_to_port = {}
-        self.mac_ip_to_dp = {}            #dict 
+        self.macToPort = {}
+        self.flow_thread = hub.spawn(self.flowMonitor)
         self.datapaths = {}
+        self.mitigation = 0
+        self.svmobj = None
+        self.arpIpToPort = {}
 
-        #self.fields = {'time':'','datapath':'','in-port':'','ipv4_src':'','ipv4_dst':'','out-port':'','total_packets':0,'total_bytes':0,'tp_src':0,'tp_dst':0}
-        self.match_miss_flow_entry = ""
-        self.actions_miss_flow_entry = ""
-        
-        
-        ####################
+        if detect == 1:
+            self.svmobj = SVM()
 
-        self.ddos_oocurs=False
-        self.src_of_DDOS =0     #src mac
-        self.monitor_thread = hub.spawn(self._monitor)
-        
-        # Konfigurasi email
-        self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
-        self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
-        self.to_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
-        
-        logging.getLogger("ryu").setLevel(logging.CRITICAL)
-
-    def _monitor(self):
+    def flowMonitor(self):
+        hub.sleep(5)
         while True:
-            #self.src_of_DDOS =""
-            #self.ddos_oocurs = 0
-            #self.mac_ip_to_dp ={}
-            hub.sleep(10)        
-
+            for dp in self.datapaths.values():
+                self.reqFlowMetric(dp)
+            hub.sleep(timeIntrv)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def switch_features_handler(self, ev):
+    def switchFeaturesHandler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+        self.datapaths[datapath.id] = datapath
+        #flowSerialNo = getFlowNumb()
 
         match = parser.OFPMatch()
-        self.match_miss_flow_entry = match
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
-        self.actions_miss_flow_entry = actions                                          
-        self.add_flow(datapath, 0, match, actions)
+        self.addFlows(datapath, 0, match, actions, flowSerialNo)
 
-    def add_flow(self, datapath, priority, match, actions, buffer_id=None, idle=0, hard=0):
+        #initCsv_Port(datapath.id)
+        #initCsv_FlowCount(datapath.id)
+
+    def reqFlowMetric(self, datapath):
+        ofp = datapath.ofproto
+        ofp_parser = datapath.ofproto_parser
+        req = ofp_parser.OFPFlowStatsRequest(datapath)
+        datapath.send_msg(req)
+
+
+    def speedFlowEntry(self, flows):
+        global prevFlowCount
+        curr_flowCount = 0
+        for flow in flows:
+            curr_flowCount += 1
+
+        #print "speed of flow entries ", flowCount
+        sfe = curr_flowCount - prevFlowCount
+        prevFlowCount = curr_flowCount
+        return sfe
+
+
+    def speedofSourceIP(self, flows):
+        global pastSSIPLenght
+        ssip = []
+        #print "length of flow table " ,len(flows)
+        for flow in flows:
+            m = {}
+            for i in flow.match.items():
+                key = list(i)[0]  # match key
+                val = list(i)[1]  # match value
+                if key == "ipv4_src":
+                 
+                    if val not in ssip:
+                        ssip.append(val)
+        cur_ssip_len = len(ssip)
+        ssip_result = cur_ssip_len - pastSSIPLenght
+        pastSSIPLenght = cur_ssip_len
+        return ssip_result
+
+
+    def _ratio_of_flowpair(self, flows):
+        flowCount = 0
+        for flow in flows:
+            flowCount += 1
+        flowCount -= 1
+
+        collaborative_flows = {}
+        for flow in flows:
+            m = {}
+            srcip = dstip = None
+            for i in flow.match.items():
+                key = list(i)[0]  # match key
+                val = list(i)[1]  # match value
+                if key == "ipv4_src":
+                    srcip = val
+                    #print key,val
+                if key == "ipv4_dst":
+                    dstip = val
+            if srcip and dstip:
+                fwdflowhash = srcip + "_" + dstip
+                revflowhash = dstip + "_" + srcip
+                #check flowhash is already exist
+                if not fwdflowhash in collaborative_flows:
+                    #check you have reverse flowhash exists?
+                    if not revflowhash in collaborative_flows:
+                        collaborative_flows[fwdflowhash] = {}
+                    else:
+                        collaborative_flows[revflowhash][fwdflowhash] = 1
+        #identify number of collaborative flows
+        onesideflow = iflow = 0
+        for key in collaborative_flows:
+            if collaborative_flows[key] == {}:
+                onesideflow += 1
+            else:
+                iflow +=2
+        #print "collaborative_flows", collaborative_flows
+        #print "oneside flow", onesideflow
+        #print "collaborative flow ", iflow
+        if flowCount != 0 :
+            rfip = float(iflow) / flowCount
+            #print "rfip ", rfip
+            return rfip
+        return 1.0
+
+    @set_ev_cls([ofp_event.EventOFPFlowStatsReply], MAIN_DISPATCHER)
+    def flowstatsReplyHandler(self, ev):
+        global globalFlows, iterate
+        t_flows = ev.msg.body
+        flags = ev.msg.flags
+        dpid = ev.msg.datapath.id
+        globalFlows.extend(t_flows)
+
+        if flags == 0:
+            sfe  = self.speedFlowEntry(globalFlows)
+            ssip = self.speedofSourceIP(globalFlows)
+            rfip = self._ratio_of_flowpair(globalFlows)
+
+            if detect == 1:
+                result = self.svmobj.classify([sfe,ssip,rfip])
+                #print "Attack result ", result
+                if  '1' in result:
+                    print("Status : Attack Traffic Detected")
+                    self.mitigation = 1
+                    if mitigate == 1 :
+                        print("Status : Starting Mitigation")
+
+                if '0' in result:
+                    print("Status : Normal Traffic")
+
+            else:
+                t = time.strftime("%m/%d/%Y, %H:%M:%S", time.localtime())
+                row = [t, str(sfe), str(ssip), str(rfip)]
+                self.logger.info(row)
+
+                updateCsv_Port(dpid, row)
+                updateCsv_resData([str(sfe), str(ssip), str(rfip)])
+            globalFlows = []
+
+
+            t = time.strftime("%m/%d/%Y, %H:%M:%S", time.localtime())
+            update_flowcountcsv(dpid, [t, str(prevFlowCount)])
+
+    def addFlows(self, datapath, priority, match, actions,serial_no, buffer_id=None, idletime=0, hardtime=0):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         if buffer_id:
-            mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
-                                    idle_timeout=idle, hard_timeout=hard,
+            mod = parser.OFPFlowMod(datapath=datapath, cookie=serial_no, buffer_id=buffer_id,
+                                    idle_timeout=idletime, hard_timeout=hardtime,
                                     priority=priority, match=match,
                                     instructions=inst)
         else:
-            mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                    idle_timeout=idle, hard_timeout=hard,
+            mod = parser.OFPFlowMod(datapath=datapath, cookie=serial_no, priority=priority,
+                                    idle_timeout=idletime, hard_timeout=hardtime,
                                     match=match, instructions=inst)
-            
         datapath.send_msg(mod)
 
+
+    def blockPort(self, datapath, portnumber):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        match = parser.OFPMatch(in_port=portnumber)
+        actions = []
+        flowSerialNo = getFlowNumb()
+        self.addFlows(datapath, 100, match, actions, flowSerialNo, hardtime=120)
+
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
-    def _packet_in_handler(self, ev):
-        # If you hit this you might want to increase
-        # the "miss_send_length" of your switch
+    def packetinHandler(self, ev):
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
@@ -145,86 +279,56 @@ class DDoSDetection(app_manager.RyuApp):
         eth = pkt.get_protocols(ethernet.ethernet)[0]
 
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+
             return
         dst = eth.dst
         src = eth.src
-        if(self.src_of_DDOS != src) and self.ddos_oocurs:
-            self.ddos_oocurs = 0
-            self.mac_ip_to_dp ={}
-            return          #during DDOS
-
         dpid = datapath.id
-        self.mac_to_port.setdefault(dpid, {})
-        self.mac_ip_to_dp.setdefault(src, {})           #src as key
-        #self.mac_ip_to_dp =  {'00:00:00:00:00:05': {'10.0.0.5': 0}, '00:00:00:00:00:06': {'10.0.0.6': 0}}
-        print("msg from dpid ",dpid," src mac is ",src," dst mac is ",dst)
+        self.macToPort.setdefault(dpid, {})
+        self.arpIpToPort.setdefault(dpid, {})
+        self.arpIpToPort[dpid].setdefault(in_port, [])
+        self.logger.info("packet in Switch : %s SrcMAC : %s DstMAC : %s  Switch Port : %s", dpid, src, dst, in_port)
+        
+        
+        self.macToPort[dpid][src] = in_port
 
-
-        # learn a mac address to avoid FLOOD next time.
-        self.mac_to_port[dpid][src] = in_port
-
-        if dst in self.mac_to_port[dpid]:
-            out_port = self.mac_to_port[dpid][dst]
+        if dst in self.macToPort[dpid]:
+            out_port = self.macToPort[dpid][dst]
         else:
             out_port = ofproto.OFPP_FLOOD
 
         actions = [parser.OFPActionOutput(out_port)]
-
-
-
-        # install a flow to avoid packet_in next time
+        if eth.ethertype == ether_types.ETH_TYPE_ARP:
+            self.logger.info("Received ARP Packet from Switch: %s SrcMac : %s DstMac: %s ", dpid, src, dst)
+            a = pkt.get_protocol(arp.arp)
+            #print "arp packet ", a
+            if a.opcode == arp.ARP_REQUEST or a.opcode == arp.ARP_REPLY:
+                if not a.src_ip in self.arpIpToPort[dpid][in_port]:
+                    self.arpIpToPort[dpid][in_port].append(a.src_ip)
+                    #print "arpIpToPort " ,self.arpIpToPort
         if out_port != ofproto.OFPP_FLOOD:
-
-            # check IP Protocol and create a match for IP
             if eth.ethertype == ether_types.ETH_TYPE_IP:
                 ip = pkt.get_protocol(ipv4.ipv4)
                 srcip = ip.src
                 dstip = ip.dst
                 protocol = ip.proto
-                self.mac_ip_to_dp[src][ip.src] = 0          
-                #print("self.mac_ip_to_dp = ",self.mac_ip_to_dp)
-                #print("len(self.mac_ip_to_dp[src] = ",len(self.mac_ip_to_dp[src]))
-                if(len(self.mac_ip_to_dp[src]) > 0):
-                    self.ddos_oocurs=True
-                    print("DDos occur from src ", src)
-                    match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
-                    self.add_flow(datapath, 110, match, [], msg.buffer_id, idle=0, hard=100*3*2)
+                print("Source :", ip)
 
-                    return-2
+                if self.mitigation and mitigate:
+                    if not (srcip in self.arpIpToPort[dpid][in_port]):
+                        self.logger.info("Attack Detected from Switch: %s SwitchPort %s   ", dpid, in_port)
+                        print("Port Blocking on Port: ", in_port)
+                        self.blockPort(datapath, in_port)
+                        print("Attacker Source :", ip)
+                        return
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_src=srcip, ipv4_dst=dstip)
 
-
-                # if ICMP Protocol
-                if protocol == in_proto.IPPROTO_ICMP:
-                    t = pkt.get_protocol(icmp.icmp)
-                    match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,in_port=in_port,
-                                            ipv4_src=srcip, ipv4_dst=dstip,
-                                            ip_proto=protocol,icmpv4_code=t.code,
-                                            icmpv4_type=t.type)
-
-                #  if TCP Protocol
-                elif protocol == in_proto.IPPROTO_TCP:
-                    t = pkt.get_protocol(tcp.tcp)
-                    match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,in_port=in_port,
-                                            ipv4_src=srcip, ipv4_dst=dstip,
-                                            ip_proto=protocol,
-                                            tcp_src=t.src_port, tcp_dst=t.dst_port,)
-
-                #  If UDP Protocol
-                elif protocol == in_proto.IPPROTO_UDP:
-                    u = pkt.get_protocol(udp.udp)
-                    match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,in_port=in_port,
-                                            ipv4_src=srcip, ipv4_dst=dstip,
-                                            ip_proto=protocol,
-                                            udp_src=u.src_port, udp_dst=u.dst_port,)
-
-                # verify if we have a valid buffer_id, if yes avoid to send both
-                # flow_mod & packet_out
+                flowSerialNo = getFlowNumb()
                 if msg.buffer_id != ofproto.OFP_NO_BUFFER:
-                    self.add_flow(datapath, 10, match, actions, msg.buffer_id, idle=20, hard=100*3)
+                    self.addFlows(datapath, 1, match, actions, flowSerialNo,  buffer_id=msg.buffer_id)
                     return
                 else:
-                    self.add_flow(datapath, 10, match, actions, idle=20, hard=100*3)
-
+                    self.addFlows(datapath, 1, match, actions, flowSerialNo)
         data = None
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
             data = msg.data
@@ -232,19 +336,3 @@ class DDoSDetection(app_manager.RyuApp):
         out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
         datapath.send_msg(out)
-        
-        
-    def send_email(subject, message, to_email, from_email, password):
-        try:
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(from_email, password)
-            msg = MIMEText(message)
-            msg['Subject'] = subject
-            msg['From'] = from_email
-            msg['To'] = to_email
-            server.sendmail(from_email, to_email, msg.as_string())
-            server.quit()
-            print("Email berhasil dikirim!")
-        except Exception as e:
-            print(f"Error mengirim email: {e}")
