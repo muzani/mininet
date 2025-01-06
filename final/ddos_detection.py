@@ -14,11 +14,11 @@ from email.mime.text import MIMEText
 
 
 
-class EmailNotificationRyu(app_manager.RyuApp):
+class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(EmailNotificationRyu, self).__init__(*args, **kwargs)
+        super(DDoSDetection, self).__init__(*args, **kwargs)
         self.packet_counts = defaultdict(int)  # Penghitung paket per IP
         self.threshold = 50  # Ambang batas jumlah paket untuk DDoS
         self.email_sent = set()  # Mencatat IP yang sudah dikirimi email
@@ -32,14 +32,14 @@ class EmailNotificationRyu(app_manager.RyuApp):
     def switch_features_handler(self, ev):
         """Menambahkan flow saat switch pertama kali terhubung ke controller."""
         self.logger.info("Switch connected: %s", ev.msg.datapath.id)
-        # Kirim email notifikasi saat switch baru terhubung
-        # switch_id = ev.msg.datapath.id
-        # subject = "Notifikasi SDN - Switch Baru Terhubung"
-        # message = f"Switch dengan ID {switch_id} telah terhubung ke controller."        
-        # send_email(subject, message, self.to_email, self.from_email, self.password)
-        # self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
         
-        #kirim email jika ada serangan
+        #Kirim email notifikasi saat switch baru terhubung
+        switch_id = ev.msg.datapath.id
+        subject = "Notifikasi SDN - Switch Baru Terhubung"
+        message = f"Switch dengan ID {switch_id} telah terhubung ke controller."        
+        send_email(subject, message, self.to_email, self.from_email, self.password)
+        self.logger.info(f"Email notifikasi dikirim untuk switch ID: {switch_id}")
+        
         self.install_default_flow(ev.msg.datapath)
     
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -61,6 +61,21 @@ class EmailNotificationRyu(app_manager.RyuApp):
         
         ip_pkt = pkt.get_protocol(ipv4.ipv4)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
+        pkt_tcp = pkt.get_protocol(tcp.tcp)
+        pkt_udp = pkt.get_protocol(udp.udp)
+        pkt_arp = pkt.get_protocol(arp.arp)
+        
+        if icmp_pkt:
+            print("paket masuk dari Icmp")
+        elif ip_pkt:
+            print("paket masuk dari IP V4")
+        elif(pkt_tcp): 
+            print("tcp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        elif(pkt_udp): 
+            print("udp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        if(pkt_arp): 
+            print("arp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+        
         # Log untuk paket yang diterima
         if ip_pkt and icmp_pkt:
             src_ip = ip_pkt.src
