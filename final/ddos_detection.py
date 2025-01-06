@@ -66,15 +66,13 @@ class DDoSDetection(app_manager.RyuApp):
         pkt_arp = pkt.get_protocol(arp.arp)
         
         if icmp_pkt:
-            print("paket masuk dari Icmp")
-        elif ip_pkt:
-            print("paket masuk dari IP V4")
+            print("ICMP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         elif(pkt_tcp): 
-            print("tcp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("TCP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         elif(pkt_udp): 
-            print("udp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("UDP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         if(pkt_arp): 
-            print("arp packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
+            print("ARP packet are receveived at dpid ",dpid," from src ",src, " to dst ",dst)
         
         # Log untuk paket yang diterima
         if ip_pkt and icmp_pkt:
