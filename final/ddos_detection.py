@@ -139,5 +139,10 @@ class DDoSDetection(app_manager.RyuApp):
 #protocol ping ICMP
 # hping3 -S -p 80 --flood <IP_TARGET>
 # hping3 -S -p 6653 -i u1000 192.168.1.3
-# hping3 -1 -i u1000 192.168.1.3
+# hping3 -1 -i u1000 192.168.1.3 #-i u1000: Mengirimkan paket setiap 1000 mikrodetik (1 ms). Anda dapat menyesuaikan nilainya
 # hping3 -1 --flood 192.168.1.5
+# sudo hping3 -1 --flood -d 1200 <target_ip> #-d 1200: Mengatur ukuran payload data dalam paket menjadi 1200 byte.
+
+# -1: Mode ICMP (mengirimkan paket ICMP Echo Request seperti ping).
+# --flood: Mengirimkan paket tanpa jeda, membuat banjir lalu lintas.
+# <target_ip>: Alamat IP target yang akan diserang.
