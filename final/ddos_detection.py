@@ -12,7 +12,20 @@ from ryu.lib.packet import arp
 import smtplib
 from email.mime.text import MIMEText
 
-
+def send_email(subject, message, to_email, from_email, password):
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(from_email, password)
+            msg = MIMEText(message)
+            msg['Subject'] = subject
+            msg['From'] = from_email
+            msg['To'] = to_email
+            server.sendmail(from_email, to_email, msg.as_string())
+            server.quit()
+            print("Email berhasil dikirim!")
+        except Exception as e:
+            print(f"Error mengirim email: {e}")
 
 class DDoSDetection(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -27,22 +40,7 @@ class DDoSDetection(app_manager.RyuApp):
         self.from_email = "socialme.black@gmail.com"  # Ganti dengan email Anda
         self.password = "jyzemtausobocqjy"  # Ganti dengan password email Anda
         self.to_email = "zanimumu@gmail.com"  # Ganti dengan email penerima
-    
-    def send_email(subject, message, to_email, from_email, password):
-        try:
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(from_email, password)
-            msg = MIMEText(message)
-            msg['Subject'] = subject
-            msg['From'] = from_email
-            msg['To'] = to_email
-            server.sendmail(from_email, to_email, msg.as_string())
-            server.quit()
-            print("Email berhasil dikirim!")
-        except Exception as e:
-            print(f"Error mengirim email: {e}")
-            
+   
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         """Menambahkan flow saat switch pertama kali terhubung ke controller."""
