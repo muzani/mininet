@@ -110,11 +110,12 @@ class DDoSDetection(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         
         # Membuat match untuk menangani semua paket (default flow)
-        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1)
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
+        match = parser.OFPMatch(eth_type=0x0800, ip_proto=1) #1 = ICMP, 6= TCP, 17 UDP
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
+        #actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
         
         # Menambahkan flow ke switch untuk menangani semua paket
-        self.add_flow(datapath, 0, match, actions)
+        self.add_flow(datapath, 1, match, actions)
 
     def add_flow(self, datapath, priority, match, actions):
         # """Menambahkan flow ke switch."""
